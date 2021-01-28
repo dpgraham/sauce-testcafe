@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuite name="TestCafe Tests: Chrome 87.0.4280.141 / macOS 10.15.6" tests="3" failures="0" skipped="0" errors="0" time="7.024" timestamp="Fri, 15 Jan 2021 07:43:00 GMT" >
+  <testcase classname="Getting Started Sauce demo" name="SwagLabs username not set" time="1.532">
+  </testcase>
+  <testcase classname="Getting Started Sauce demo" name="SwagLabs locked user login" time="1.724">
+  </testcase>
+  <testcase classname="Getting Started Sauce demo" name="SwagLabs standard user login" time="2.205">
+  </testcase>
+</testsuite>

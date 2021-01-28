@@ -1,0 +1,17 @@
+Debugger attached.
+Sauce Cypress Runner 0.0.0
+ Running tests in:
+ - Chrome 87.0.4280.141 / macOS 10.15.6
+
+ ✓ Getting Started Sauce demo - SwagLabs username not set
+ ✓ Getting Started Sauce demo - SwagLabs locked user login
+ ✓ Getting Started Sauce demo - SwagLabs standard user login
+
+
+ 3 passed (7s)
+Reporting assets in '/Users/danielgraham/sauce-testcafe-runner/tests/fixtures/sauceswag-ok/__assets__' to Sauce Labs
+Preparing assets
+
+Open job details page: https://app.saucelabs.com/tests/6424cc9ad65c41fd883a412cd86e511f
+
+Waiting for the debugger to disconnect...

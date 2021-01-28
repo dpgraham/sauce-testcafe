@@ -1,0 +1,44 @@
+{
+  "startTime": "2021-01-15T07:42:53.753Z",
+  "endTime": "2021-01-15T07:43:00.777Z",
+  "userAgents": [
+    "Chrome 87.0.4280.141 / macOS 10.15.6"
+  ],
+  "passed": 3,
+  "total": 3,
+  "skipped": 0,
+  "fixtures": [
+    {
+      "name": "Getting Started Sauce demo",
+      "path": "/Users/danielgraham/sauce-testcafe-runner/tests/fixtures/sauceswag-ok/tests/sauceswag.ok.test.js",
+      "meta": {},
+      "tests": [
+        {
+          "name": "SwagLabs username not set",
+          "meta": {},
+          "errs": [],
+          "durationMs": 1532,
+          "screenshotPath": null,
+          "skipped": false
+        },
+        {
+          "name": "SwagLabs locked user login",
+          "meta": {},
+          "errs": [],
+          "durationMs": 1724,
+          "screenshotPath": null,
+          "skipped": false
+        },
+        {
+          "name": "SwagLabs standard user login",
+          "meta": {},
+          "errs": [],
+          "durationMs": 2205,
+          "screenshotPath": null,
+          "skipped": false
+        }
+      ]
+    }
+  ],
+  "warnings": []
+}

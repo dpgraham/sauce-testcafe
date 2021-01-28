@@ -1,0 +1,19 @@
+{
+  "name": "sauce-testcafe",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Dan Graham",
+  "license": "ISC",
+  "dependencies": {
+    "saucelabs": "^4.6.5",
+    "teen_process": "^1.16.0",
+    "webdriverio": "^6.12.1"
+  },
+  "devDependencies": {
+    "testcafe": "^1.10.1"
+  }
+}
