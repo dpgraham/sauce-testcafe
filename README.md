@@ -16,7 +16,7 @@ Run your TestCafe tests on the Sauce Labs cloud! Run your tests on Chrome, Firef
 The "Getting Started" example runs your test using the default capabilities (Google Chrome on Windows). To run your tests on different browsers and platforms, you need to provide environment variables to your test
 
 | Environment Variable | Description | Example | Default |
-| ---- | ---- | ---- |
+| ---- | ---- | ---- | ---- |
 | SAUCE_BROWSER_NAME | The name of the browser to run on | Chrome, Safari, MicrosoftEdge | Chrome |
 | SAUCE_BROWSER_VERSION | The version of the browser | (see platform configurator https://wiki.saucelabs.com/display/DOCS/Platform+Configurator#/) | latest |
 | SAUCE_PLATFORM_NAME | The platform to run on | Windows, Windows 10, macOS 10.15, iOS, Android | Windows |
