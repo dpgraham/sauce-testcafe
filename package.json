@@ -9,6 +9,7 @@
   "author": "Dan Graham",
   "license": "ISC",
   "dependencies": {
+    "bluebird": "^3.7.2",
     "saucelabs": "^4.6.5",
     "teen_process": "^1.16.0",
     "webdriverio": "^6.12.1"

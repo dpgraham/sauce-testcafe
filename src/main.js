@@ -1,10 +1,12 @@
 const webdriverio = require('webdriverio');
 const { SubProcess } = require('teen_process');
 const path = require('path');
+const B = require('bluebird');
 
 async function main () {
   let connectUrl;
   let session;
+  let isSessionDone = false;
   try {
     // Start TestCafe remote, and wait for it to log out the connectUrl
     function startTestCafe () {
@@ -60,27 +62,46 @@ async function main () {
     }
     const buildName = getBuildName();
 
+    // Function that gives a Sauce Labs Test Name (for display purposes)
     function getTestName () {
       if (process.env.SAUCE_TEST_NAME) {
         return process.env.SAUCE_TEST_NAME;
       }
-      let testName = `${process.env.SAUCE_BROWSER_NAME} - ${process.env.SAUCE_BROWSER_VERSION} -` +
-       `${process.env.SAUCE_PLATFORM_NAME} - ${process.env.SAUCE_PLATFORM_VERSION}`
-      if (process.env.SAUCE_DEVICE_NAME) {
-        testName += process.env.SAUCE_DEVICE_NAME;
+      const nameTokens = [
+        process.env.SAUCE_BROWSER_NAME,
+        process.env.SAUCE_BROWSER_VERSION,
+        process.env.SAUCE_PLATFORM_NAME,
+        process.env.SAUCE_PLATFORM_VERSION,
+        process.env.SAUCE_DEVICE_NAME,
+      ];
+      const usedTokens = [];
+      for (const token of nameTokens) {
+        if (token) {
+          usedTokens.push(token);
+        }
       }
-      return testName;
+      return usedTokens.join(' -- ');
     }
     const testName = getTestName();
+
+    // Get the browser name
+    function getBrowserName () {
+      if (process.env.SAUCE_BROWSER_NAME) {
+        return process.env.SAUCE_BROWSER_NAME;
+      }
+      const platformName = process.env.SAUCE_PLATFORM_NAME || '';
+      if (platformName.toLowerCase() === 'ios') {
+        return 'Safari';
+      }
+      return 'Chrome';
+    }
 
     // Start Sauce Labs session and give it the testCafe connect URL
     async function startSauceLabsSession () {
       const capabilities = {
-        browserName: process.env.SAUCE_BROWSER_NAME || 'Chrome',
+        browserName: getBrowserName(),
         browserVersion: process.env.SAUCE_BROWSER_VERSION || 'latest',
         platformName: process.env.SAUCE_PLATFORM_NAME || 'windows',
-        name: testName,
-        tunnelIdentifier: process.env.SAUCE_TUNNEL_ID,
         'sauce:options': {
           build: buildName,
           name: testName,
@@ -93,6 +114,8 @@ async function main () {
       if (process.env.SAUCE_DEVICE_NAME) {
         capabilities.deviceName = process.env.SAUCE_DEVICE_NAME;
         capabilities['appium:deviceName'] = process.env.SAUCE_DEVICE_NAME;
+        capabilities.name = testName;
+        capabilities.tunnelIdentifier = process.env.SAUCE_TUNNEL_ID;
       }
       session = await webdriverio.remote({
           port: 80,
@@ -106,6 +129,17 @@ async function main () {
       return session;
     }
     session = await startSauceLabsSession();
+
+    // Ping session every 10 seconds so that it
+    // does not time out in middle of TestCafe run
+    async function pingSession () {
+      if (!isSessionDone) {
+        await B.delay(10 * 6000);
+        await session.getSession();
+        pingSession();
+      }
+    };
+    pingSession();
 
     // Wait for the testCafe session to complete
     function waitForTestCafe () {

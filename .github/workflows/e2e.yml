@@ -7,7 +7,6 @@ on:
   pull_request:
     branches:
       - master
-
 jobs:
   iphone-real:
     runs-on: ubuntu-latest
@@ -55,3 +54,47 @@ jobs:
           SAUCE_PLATFORM_VERSION: 13.4
           SAUCE_DEVICE_NAME: iPhone Simulator
           SAUCE_TUNNEL_ID: ${{ github.run_id }}_iphone_simulator
+  android_emulator:
+    runs-on: ubuntu-latest
+    name: Android Emulator
+    env:
+      SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
+      SAUCE_ACCESS_KEY: ${{ secrets.SAUCE_ACCESS_KEY }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 12
+      - run: npm ci
+      - run: npx sl sc -i "$GITHUB_RUN_ID"_android_emulator & 
+        name: Sauce Connect
+      - run: sleep 10
+        name: Give Sauce Connect 10 seconds to start
+      - run: node . ./tests/fixtures/sauceswag-ok
+        env:
+          SAUCE_BROWSER_NAME: Chrome
+          SAUCE_PLATFORM_NAME: Android
+          SAUCE_PLATFORM_VERSION: 11.0
+          SAUCE_DEVICE_NAME: "Android GoogleAPI Emulator"
+          SAUCE_TUNNEL_ID: ${{ github.run_id }}_android_emulator
+  chrome:
+    runs-on: ubuntu-latest
+    name: Google Chrome
+    env:
+      SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
+      SAUCE_ACCESS_KEY: ${{ secrets.SAUCE_ACCESS_KEY }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 12
+      - run: npm ci
+      - run: npx sl sc -i "$GITHUB_RUN_ID"_chrome & 
+        name: Sauce Connect
+      - run: sleep 10
+        name: Give Sauce Connect 10 seconds to start
+      - run: node . ./tests/fixtures/sauceswag-ok
+        env:
+          SAUCE_BROWSER_NAME: Chrome
+          SAUCE_PLATFORM_NAME: Windows
+          SAUCE_TUNNEL_ID: ${{ github.run_id }}_chrome
