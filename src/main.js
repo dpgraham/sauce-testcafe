@@ -3,91 +3,136 @@ const { SubProcess } = require('teen_process');
 const path = require('path');
 
 async function main () {
+  let connectUrl;
+  let session;
   try {
-    // TODO: Add SauceConnect handling logic
-    /*function startSauceConnect () {
-      return new Promise((resolve, reject) => {
-        const sauceConnectProc = await new SubProcess(`npx`, ['sl', 'sc']); // TODO: Add a tunnel identifier here
-        sauceConnectProc.on('output', (stdout, stderr) => {
-            console.log(`SAUCE-CONNECT: ${stdout}`); // TODO: Use winston logs here
-            console.error(`SAUCE-CONNECT: ${stderr}`);
-        });
-        sauceConnectProc.start(); // TODO: Check the sauceconnect logs to verify it's ready
-      });
-    }
-    await startSauceConnect();*/
-
-    let connectUrl;
-    let session;
+    // Start TestCafe remote, and wait for it to log out the connectUrl
     function startTestCafe () {
       return new Promise((resolve, reject) => {
-        const bundledTestCafePath = path.join(__dirname, '..', 'node_modules', '.bin', 'testcafe');
-        const testCafePath = bundledTestCafePath; // Add flag that lets user point to binary on their machine
-        const testCafeArgs = process.argv.slice(2); // Change this to 1 when it's a binary
-        const testCafeProc = new SubProcess(testCafePath, ['remote', ...testCafeArgs]);
-        testCafeProc.start(); // TODO: Add a check for testCafe being ready
-        testCafeProc.on('lines-stdout', (lines) => {
-          for (let line of lines) {
-            if (line.toLowerCase().startsWith('connect url')) {
-              const tokens = line.split(':');
-              connectUrl = tokens.slice(1).join(':').trim();;
-              resolve();
+        try {
+          const testcafeBinary = process.platform == 'win32' ? 'testcafe.cmd' : 'testcafe';
+          const bundledTestCafePath = path.join(__dirname, '..', 'node_modules', '.bin', testcafeBinary);
+          const testCafePath = bundledTestCafePath; // Add flag that lets user point to binary on their machine
+          const testCafeArgs = process.argv.slice(2); // Change this to 1 when it's a binary
+          const testCafeProc = new SubProcess(testCafePath, ['remote', ...testCafeArgs]);
+          testCafeProc.start(); // TODO: Add a check for testCafe being ready
+          testCafeProc.on('lines-stdout', (lines) => {
+            for (let line of lines) {
+              if (line.toLowerCase().startsWith('connect url')) {
+                const tokens = line.split(':');
+                connectUrl = tokens.slice(1).join(':').trim();
+                //connectUrl = new URL(tokens.slice(1).join(':').trim());
+                //connectUrl = `${connectUrl.protocol}localhost:${connectUrl.port}${connectUrl.pathname}`
+                resolve(testCafeProc);
+              }
             }
-          }
-        });
-        testCafeProc.on('output', (stdout, stderr) => {
-          if (stdout) {
-            console.log(stdout.trim());
-          }
-          if (stderr) {
-            console.error(stderr.trim());
-          }
-        });
-        testCafeProc.on('exit', (code) => {
-          session.deleteSession();
-          if (code !== 0) {
-            reject();
-          }
-          session.set;
-          // TODO: Report the status
-        });
-        return testCafeProc;
+          });
+          testCafeProc.on('output', (stdout, stderr) => {
+            if (stdout) {
+              console.log(stdout.trim());
+            }
+            if (stderr) {
+              console.error(stderr.trim());
+            }
+          });
+          testCafeProc.on('exit', (code) => {
+            if (code !== 0) {
+              reject();
+            }
+            // TODO: Report the status
+          });
+        } catch (e) {
+          reject();
+        }
       });
     }
-    await startTestCafe();
+    const testCafeProc = await startTestCafe();
 
-    // TODO: Add command line flags that pull this in
-    const capabilities = {
-      browserName: process.env.SAUCE_BROWSER_NAME || 'Chrome',
-      browserVersion: process.env.SAUCE_BROWSER_VERSION || 'latest',
-      platformName: process.env.SAUCE_PLATFORM_NAME || 'windows',
-      'sauce:options': {
-        build: process.env.SAUCE_BUILD,
-        name: 'Test Name', // TODO: Parameterize this; make a sensible default
+    // Get a unique build name
+    function getBuildName () {
+      if (process.env.SAUCE_BUILD) {
+        return process.env.SAUCE_BUILD;
       }
-    };
-    if (process.env.SAUCE_PLATFORM_VERSION) {
-      capabilities.platformVersion = process.env.SAUCE_PLATFORM_VERSION;
+      if (process.env.GITHUB_RUN_ID) {
+        return `github-${process.env.GITHUB_RUN_ID}`;
+      }
+      return 
     }
-    if (process.env.SAUCE_DEVICE_NAME) {
-      capabilities.deviceName = process.env.SAUCE_DEVICE_NAME;
+    const buildName = getBuildName();
+
+    function getTestName () {
+      if (process.env.SAUCE_TEST_NAME) {
+        return process.env.SAUCE_TEST_NAME;
+      }
+      let testName = `${process.env.SAUCE_BROWSER_NAME} - ${process.env.SAUCE_BROWSER_VERSION} -` +
+       `${process.env.SAUCE_PLATFORM_NAME} - ${process.env.SAUCE_PLATFORM_VERSION}`
+      if (process.env.SAUCE_DEVICE_NAME) {
+        testName += process.env.SAUCE_DEVICE_NAME;
+      }
+      return testName;
     }
-    session = await webdriverio.remote({
-        port: 80,
-        protocol: 'http',
-        region: process.env.SAUCE_REGION || 'us',
-        user: process.env.SAUCE_USERNAME,
-        key: process.env.SAUCE_ACCESS_KEY,
-        capabilities,
-    });
-    session.url(connectUrl);
+    const testName = getTestName();
+
+    // Start Sauce Labs session and give it the testCafe connect URL
+    async function startSauceLabsSession () {
+      const capabilities = {
+        browserName: process.env.SAUCE_BROWSER_NAME || 'Chrome',
+        browserVersion: process.env.SAUCE_BROWSER_VERSION || 'latest',
+        platformName: process.env.SAUCE_PLATFORM_NAME || 'windows',
+        name: testName,
+        tunnelIdentifier: process.env.SAUCE_TUNNEL_ID,
+        'sauce:options': {
+          build: buildName,
+          name: testName,
+          'tunnel-identifier': process.env.SAUCE_TUNNEL_ID,
+        }
+      };
+      if (process.env.SAUCE_PLATFORM_VERSION) {
+        capabilities.platformVersion = process.env.SAUCE_PLATFORM_VERSION;
+      }
+      if (process.env.SAUCE_DEVICE_NAME) {
+        capabilities.deviceName = process.env.SAUCE_DEVICE_NAME;
+        capabilities['appium:deviceName'] = process.env.SAUCE_DEVICE_NAME;
+      }
+      session = await webdriverio.remote({
+          port: 80,
+          protocol: 'http',
+          region: process.env.SAUCE_REGION || 'us',
+          user: process.env.SAUCE_USERNAME,
+          key: process.env.SAUCE_ACCESS_KEY,
+          capabilities,
+      });
+      await session.url(connectUrl);
+      return session;
+    }
+    session = await startSauceLabsSession();
+
+    // Wait for the testCafe session to complete
+    function waitForTestCafe () {
+      return new Promise((resolve, reject) => {
+        testCafeProc.on('exit', (code) => {
+          code === 0 ? resolve() : reject();
+        });
+      });
+    }
+    await waitForTestCafe();
     console.log('Running test on Sauce Cloud'); // TODO: Winstonize this
   } catch (e) {
     console.log(e);
     process.exit(1);
+  } finally {
+    if (session) {
+      await session.deleteSession();
+      console.log('Session closed');
+    }
   }
 };
 
-main();
+main()
+  .catch((reason) => {
+    console.error(reason);
+    process.exit(1);
+  })
+  .then(() => process.exit(0));
 
 

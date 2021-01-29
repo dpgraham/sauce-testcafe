@@ -1,0 +1,57 @@
+# This workflow will run tests using node and then publish a package to GitHub Packages when a release is created
+# For more information see: https://help.github.com/actions/language-and-framework-guides/publishing-nodejs-packages
+
+name: E2E Test
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  iphone-real:
+    runs-on: ubuntu-latest
+    name: iPhone Real 14.0
+    env:
+      SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
+      SAUCE_ACCESS_KEY: ${{ secrets.SAUCE_ACCESS_KEY }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 12
+      - run: npm ci
+      - run: npx sl sc -i "$GITHUB_RUN_ID"_iphone_real & 
+        name: Sauce Connect
+      - run: sleep 10
+        name: Give Sauce Connect 10 seconds to start
+      - run: node . ./tests/fixtures/sauceswag-ok
+        env:
+          SAUCE_BROWSER_NAME: Safari
+          SAUCE_PLATFORM_NAME: iOS
+          SAUCE_PLATFORM_VERSION: 14.0
+          SAUCE_DEVICE_NAME: "iPhone .*"
+          SAUCE_TUNNEL_ID: ${{ github.run_id }}_iphone_real
+  iphone-simulator:
+    runs-on: ubuntu-latest
+    name: iPhone Simulator 13.4
+    env:
+      SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
+      SAUCE_ACCESS_KEY: ${{ secrets.SAUCE_ACCESS_KEY }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 12
+      - run: npm ci
+      - run: npx sl sc -i "$GITHUB_RUN_ID"_iphone_simulator & 
+        name: Sauce Connect
+      - run: sleep 10
+        name: Give Sauce Connect 10 seconds to start
+      - run: node . ./tests/fixtures/sauceswag-ok
+        env:
+          SAUCE_BROWSER_NAME: Safari
+          SAUCE_PLATFORM_NAME: iOS
+          SAUCE_PLATFORM_VERSION: 13.4
+          SAUCE_DEVICE_NAME: iPhone Simulator
+          SAUCE_TUNNEL_ID: ${{ github.run_id }}_iphone_simulator
